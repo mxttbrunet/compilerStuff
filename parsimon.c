@@ -6,21 +6,22 @@
 //parser will parse apart keywords/variable names from symbols
 
 
-#include<stdio.h>
 #include<ctype.h>
-#include<string.h>
-#include<stdlib.h>
-#define SYN "syntax error" 
+#include"symbolTable.h"
+#define SYN "syntax error"
 #define COND "conditional syntax error"
 #define VARI "invalid variable declaration"
+#define EXPR "invalid expression"
 char varBuffer[65];
 int lineNum = 1;
 char tokenBuff[65];
 char lastToken[65];
 char booleanString[100];
 char expro[65];
+int currReg = 0;
+int innaParen = 0;
 int i; int j; int boolFlag = 0; int parseKeyFlag = 0; int parseSymFlag = 0; int varLen = 0;
-char currChar = ' '; char newchar;
+char currChar = ' '; 
 
 //thrown when encountering a parse error 
 void parseError(char* message){
@@ -29,12 +30,49 @@ void parseError(char* message){
 }
 
 
+/*idea: do it recursively... 
+take (i + 40)-v 
+1. search for first pair of closed parens;
+add to stack??
 
-void parseExpr(char * boolean){
-        char current;
+
+
+
+
+*/
+
+void parseExpr(char * boolean, int ball){
+	int curr = ball;
 	//search for parens 
 	printf("%s\n", boolean);
+	int r = 0;
+	innaParen = 0;
+	while(boolean[r] != '\0'){
+		if(boolean[r] == '('){
+			curr++;
+			boolean[r++] = '.';
+			int open = 1; if(boolean[r] == ')'){parseError(EXPR);}
+			int p = 0; char nexp[35];
+			while(1){
+				if(boolean[r] == '('){open++;} if(boolean[r] == ')'){open--;} // can deal with single reg ops here
+				if( (boolean[r] == ')') && (open == 0)){boolean[r] = '.'; break;}
+				nexp[p++] = boolean[r++];
+				boolean[r-1] = curr + '0';
+			}
+			nexp[p] = '\0';
+			parseExpr(nexp, curr);
+		}
+		else{r++;}
+	}
+	printf("DONE w %s... in reg: %d\n", boolean, ball);
 
+
+
+
+
+
+	
+	
 }
 
 
@@ -42,9 +80,9 @@ void parseExpr(char * boolean){
 // parse sum like while( (i / 10) <= (v - 1)){...}
 void parseBool(char* boolean){
         int p = 0;
+	int q = 0;
         int cmp = 0;
-	int dummy = 0;
-	char nextExpr[50];
+	char nextExpr[65];
         //copy left side to send up for parsing
         while(cmp ==  0){
 	nextExpr[p] = boolean[p];
@@ -56,26 +94,29 @@ void parseBool(char* boolean){
 	if( boolean[p] == '>'  && boolean[p+1] == '=') cmp = 4;
         if( boolean[p] == '='  && boolean[p+1] == '=') cmp = 5;
         if( boolean[p] == '!'  && boolean[p+1] == '=') cmp = 6;
-        if(cmp > 0){nextExpr[p++] = '\0'; if(cmp >= 3){p++;} break;} 
-        p++;
+	p++;
  	}
+	nextExpr[p - 1] = '\0'; if(cmp>2){nextExpr[p] = '\0';}  
 	int pOpen = 0;
-	for(int q = 0; q < (p-1); q++){
+for(q = 0; nextExpr[q] != '\0'; q++){
 		if(nextExpr[q] == '(' ){pOpen++;} if(nextExpr[q] == ')'){pOpen--;}
 	}
-	for(int q = 0; pOpen > 0;q++){if(nextExpr[q] == '('){nextExpr[q] = '!';  pOpen--;}} 
-	parseExpr(nextExpr);
-
-	
+	for(q = 0; pOpen > 0;q++){if(nextExpr[q] == '('){nextExpr[q] = '!';  pOpen--;}} 
+	parseExpr(nextExpr, currReg++);
+	memset(nextExpr, '\0', sizeof(nextExpr));
+	for(q = 0, p++; boolean[p] != '\0'; p++){
+		nextExpr[q] = boolean[p];
+	}
+	parseExpr(nextExpr, currReg++);
 }
 
 
 void clearWhite(){
 char newChar;
-    while((isspace(newchar = getchar()))){
-                if(newchar == '\n'){lineNum++;}
+    while((isspace(newChar = getchar()))){
+                if(newChar == '\n'){lineNum++;}
         }
-        ungetc(newchar, stdin);
+        ungetc(newChar, stdin);
 }
 
 
@@ -103,19 +144,22 @@ void tokenize(){
 
 	if(!strcmp(tokenBuff, "int")){
 		varLen = 0;
+		int valid = 0;
 		memset(varBuffer, '\0', sizeof(varBuffer));
 		strcpy(lastToken,tokenBuff);
 		clearWhite();
 		while(((currChar = getchar()) != '?') && (currChar != '=')){
 			if(!isalnum(currChar)){parseError(VARI);}
+			if(isalpha(currChar)){valid = 1;}
 			varBuffer[varLen++] = currChar;
 			clearWhite();
 		}
-		if(currChar == '?'){/**ENTER ROOM FOR IT ON SYMBOL TABLE */ printf("declaration of %s valid", varBuffer);}
+		if(!valid){parseError(VARI);}  // if at least one of the chars is alphabetic then its valid
+		if(currChar == '?'){install(varBuffer,"int"); printf("declaration of %s valid", varBuffer);}
 		
 		if(currChar == '='){clearWhite(); memset(expro, '\0', sizeof(expro));
-		int l = 0; while((currChar = getchar()) != '?'){if (l > 60){parseError(VARI);} expro[l++] = currChar; clearWhite();}
-		parseExpr(expro);
+		int l = 0; while((currChar = getchar()) != '?'){clearWhite();if (l > 60){parseError(VARI);} expro[l++] = currChar; clearWhite();}
+		expro[l] = '\0'; parseExpr(expro, currReg++);
 		}
 	
 
