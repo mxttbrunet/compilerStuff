@@ -8,10 +8,11 @@
 
 #include<ctype.h>
 #include"symbolTable.h"
-#define SYN "syntax error"
+#define SYNT "syntax error"
 #define COND "conditional syntax error"
 #define VARI "invalid variable declaration"
 #define EXPR "invalid expression"
+#define PARN "unbalanced parenthese"
 char varBuffer[65];
 int lineNum = 1;
 char tokenBuff[65];
@@ -43,6 +44,7 @@ add to stack??
 
 void parseExpr(char * boolean, int ball){
 	int curr = ball;
+	int ops[4][30];
 	//search for parens 
 	printf("%s\n", boolean);
 	int r = 0;
@@ -52,7 +54,7 @@ void parseExpr(char * boolean, int ball){
 			curr++;
 			boolean[r++] = '.';
 			int open = 1; if(boolean[r] == ')'){parseError(EXPR);}
-			int p = 0; char nexp[35];
+			int p = 0; char nexp[60];
 			while(1){
 				if(boolean[r] == '('){open++;} if(boolean[r] == ')'){open--;} // can deal with single reg ops here
 				if( (boolean[r] == ')') && (open == 0)){boolean[r] = '.'; break;}
@@ -96,17 +98,21 @@ void parseBool(char* boolean){
         if( boolean[p] == '!'  && boolean[p+1] == '=') cmp = 6;
 	p++;
  	}
-	nextExpr[p - 1] = '\0'; if(cmp>2){nextExpr[p] = '\0';}  
-	int pOpen = 0;
+	nextExpr[p - 1] = '\0'; if(cmp>2){nextExpr[p++] = '\0';}  
+	int pOpen = 0; int closed;
 for(q = 0; nextExpr[q] != '\0'; q++){
 		if(nextExpr[q] == '(' ){pOpen++;} if(nextExpr[q] == ')'){pOpen--;}
 	}
-	for(q = 0; pOpen > 0;q++){if(nextExpr[q] == '('){nextExpr[q] = '!';  pOpen--;}} 
+	closed = pOpen;
+	for(q = 0; pOpen > 0;q++){if(nextExpr[q] == '('){nextExpr[q] = '!'; pOpen--;}} 
 	parseExpr(nextExpr, currReg++);
 	memset(nextExpr, '\0', sizeof(nextExpr));
-	for(q = 0, p++; boolean[p] != '\0'; p++){
-		nextExpr[q] = boolean[p];
+	for(q = 0; boolean[p] != '\0'; p++){
+		nextExpr[q++] = boolean[p];
 	}
+	nextExpr[q] = '\0';
+	for(; closed > 0;){/*printf("bruh\n");*/ nextExpr[q - closed] = '!';closed--;} 
+	//printf("hellaaaaa bruh\n");
 	parseExpr(nextExpr, currReg++);
 }
 
@@ -131,11 +137,11 @@ void tokenize(){
                 //begin conditional parse // copy cond to booleanString
                 	while( (currChar = getchar()) != '{'){
                                 clearWhite();
-				if(currChar == '('){boolFlag++;}if(currChar==')'){boolFlag--;}
+				if(currChar == '('){boolFlag++;}if(currChar==')'){boolFlag--;} if(boolFlag < 0){parseError(PARN);}
                                 if(j + 1 >= 100){parseError(COND);}
                         	booleanString[j++] = currChar;	
 			}
-                if(boolFlag != 0){parseError("unbalanced parentheses");}
+                if(boolFlag != 0){parseError(PARN);}
                 parseBool(booleanString);
 
 
@@ -158,7 +164,7 @@ void tokenize(){
 		if(currChar == '?'){install(varBuffer,"int"); printf("declaration of %s valid", varBuffer);}
 		
 		if(currChar == '='){clearWhite(); memset(expro, '\0', sizeof(expro));
-		int l = 0; while((currChar = getchar()) != '?'){clearWhite();if (l > 60){parseError(VARI);} expro[l++] = currChar; clearWhite();}
+		int l = 0; int parenFlag = 0; while((currChar = getchar()) != '?'){clearWhite();if (l > 60){parseError(VARI);} expro[l++] = currChar; clearWhite();}
 		expro[l] = '\0'; parseExpr(expro, currReg++);
 		}
 	
