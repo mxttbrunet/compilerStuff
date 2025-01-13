@@ -1,4 +1,4 @@
-//brunet, matt... parser for cqq...from scratch
+//brunet, matt... compiler for cqq...from scratch
 //tokens: "WHILE", "INT", "CHAR", "IF", "ELSE", "VAR", "PLUS"
         //"MINUS", "DIV", "MULT", "EQ", "QM","LT", "GT", "LEQ"
         // "GEQ" 
@@ -44,7 +44,6 @@ add to stack??
 
 void parseExpr(char * boolean, int ball){
 	int curr = ball;
-	int ops[4][30];
 	//search for parens 
 	printf("%s\n", boolean);
 	int r = 0;
@@ -67,19 +66,49 @@ void parseExpr(char * boolean, int ball){
 		else{r++;}
 	}
 	printf("DONE w %s... in reg: %d\n", boolean, ball);
+	r = 0;
+
+	while(boolean[r] != '\0'){
+		if(boolean[r] != '/'){r++;}
+		else{ //deal with left side... get lExp... could be .reg., var, num... 
+			int l = r; int ptr = 0;int imm = 0; char regio = ' '; int isVar = 0; char lVar [30]; memset(lVar, '\0', sizeof(lVar));
+			if(!l){parseError(EXPR);}
+			l--;
+
+			if(boolean[l] == '.'){     //the case of a reg on left side
+				if(!l){parseError(EXPR);} if(!isdigit(boolean[l-1])){parseError(EXPR);} 
+				  else{regio = boolean[l - 1]; }
+			}
+			else{
+		       		while(isalnum(boolean[l]) && (l >=0)){
+				if(isdigit(boolean[l])){imm++;}
+				if(isalpha(boolean[l])){isVar++;}
+				lVar[ptr++] = boolean[l--];
+				}
+				lVar[ptr] = '\0';
+				//reverse dat hoe
+				if( (imm > 0) || (isVar >0) ){
+				int  e = 0; char spare = ' ';
+				if( ((ptr - 1) % 2) == 0){for(; (ptr - 1) > e; ){spare = boolean[--ptr]; boolean[ptr] = boolean[e++]; boolean[e - 1] = spare;}}
+				printf("LVAR: %s\n", lVar);
+
+				}
+			}
+          		
 
 
+		}
 
-
-
-
+	}
 	
-	
+
+
 }
 
 
 
-// parse sum like while( (i / 10) <= (v - 1)){...}
+// parse sumthn like while( (i / 10) <= (v - 1)){...}
+// or sumthn like while i / 10 <= v - 1 {...}
 void parseBool(char* boolean){
         int p = 0;
 	int q = 0;
