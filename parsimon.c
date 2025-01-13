@@ -78,21 +78,46 @@ void parseExpr(char * boolean, int ball){
 			if(boolean[l] == '.'){     //the case of a reg on left side
 				if(!l){parseError(EXPR);} if(!isdigit(boolean[l-1])){parseError(EXPR);} 
 				  else{regio = boolean[l - 1]; }
+				while(boolean[l] != '.'){l--;} //progress to left until lmost .
 			}
 			else{
-		       		while(isalnum(boolean[l]) && (l >=0)){
-				if(isdigit(boolean[l])){imm++;}
-				if(isalpha(boolean[l])){isVar++;}
-				lVar[ptr++] = boolean[l--];
+		       		while(isalnum(boolean[l]) && (l >= 0)){
+					if(isdigit(boolean[l])){imm++;}
+					if(isalpha(boolean[l])){isVar++;}
+					lVar[ptr++] = boolean[l--];
 				}
+
 				lVar[ptr] = '\0';
-				//reverse dat hoe
-				if( (imm > 0) || (isVar >0) ){
+				//reverse dat hoe 
+				//printf("got here lol\n");
 				int  e = 0; char spare = ' ';
-				if( ((ptr - 1) % 2) == 0){for(; (ptr - 1) > e; ){spare = boolean[--ptr]; boolean[ptr] = boolean[e++]; boolean[e - 1] = spare;}}
-				printf("LVAR: %s\n", lVar);
+				if( ((ptr) % 2) == 0){ptr--; for(; (ptr) >= e; ){spare = lVar[ptr]; lVar[ptr] = lVar[e]; lVar[e] = spare; e++; ptr--;}}
+				else{ ptr--; for(; (ptr) > e;){spare = lVar[ptr]; lVar[ptr] = lVar[e]; lVar[e] = spare; ptr--; e++;}}
+
+
+				printf("LVAR: %s \n", lVar);
+				/*look up and add to reg*/
+
+
+				//get right 
+				ptr = 0; memset(lVar, '\0', sizeof(lVar));
+				l = r + 1;
+				if(boolean[l] == '\0'){parseError(EXPR);}
+				if(boolean[l] == '.'){if(!isdigit(boolean[l+1])){parseError(EXPR);}regio = boolean[++l]; while(boolean[++l] != '.'){;}}
+				else{
+				
+				while(isalnum(boolean[l]) && (boolean[l] != '\0')){
+                                        if(isdigit(boolean[l])){imm++;}
+                                        if(isalpha(boolean[l])){isVar++;}
+                                        lVar[ptr++] = boolean[l++];
+                                }
+				printf("RVAR: %s \n", lVar);
 
 				}
+				
+				
+				
+			r++;
 			}
           		
 
