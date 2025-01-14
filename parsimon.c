@@ -23,7 +23,7 @@ int currReg = 0;
 int innaParen = 0;
 int i; int j; int boolFlag = 0; int parseKeyFlag = 0; int parseSymFlag = 0; int varLen = 0;
 char currChar = ' '; 
-
+char ops[4] = {'/','*','+','-'};
 //thrown when encountering a parse error 
 void parseError(char* message){
      printf("%s on line %d\n",message, lineNum);
@@ -66,10 +66,12 @@ void parseExpr(char * boolean, int ball){
 		else{r++;}
 	}
 	printf("DONE w %s... in reg: %d\n", boolean, ball);
-	r = 0;
+	
 
+	for(int opio = 0; opio <= 4; opio++){
+	r = 0;
 	while(boolean[r] != '\0'){
-		if(boolean[r] != '/'){r++;}
+		if(boolean[r] != ops[opio]){r++;}
 		else{ //deal with left side... get lExp... could be .reg., var, num... 
 			int l = r; int ptr = 0;int imm = 0; char regio = ' '; int isVar = 0; char lVar [30]; memset(lVar, '\0', sizeof(lVar));
 			if(!l){parseError(EXPR);}
@@ -81,7 +83,7 @@ void parseExpr(char * boolean, int ball){
 				while(boolean[l] != '.'){l--;} //progress to left until lmost .
 			}
 			else{
-		       		while(isalnum(boolean[l]) && (l >= 0)){
+		       		while(isalnum(boolean[l]) && (l >= 0)){ 
 					if(isdigit(boolean[l])){imm++;}
 					if(isalpha(boolean[l])){isVar++;}
 					lVar[ptr++] = boolean[l--];
@@ -118,13 +120,13 @@ void parseExpr(char * boolean, int ball){
 				
 				
 			r++;
-			}
-          		
-
+			
+          		}
 
 		}
-
+		}
 	}
+	
 	
 
 
