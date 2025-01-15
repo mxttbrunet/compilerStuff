@@ -13,6 +13,7 @@
 #define VARI "invalid variable declaration"
 #define EXPR "invalid expression"
 #define PARN "unbalanced parenthese"
+#define UNRE "unrecognized variable"
 char varBuffer[65];
 int lineNum = 1;
 char tokenBuff[65];
@@ -65,7 +66,7 @@ void parseExpr(char * boolean, int ball){
 		}
 		else{r++;}
 	}
-	printf("DONE w %s... in reg: %d\n", boolean, ball);
+	printf("ATOMIC EXPR %s... in reg: %d\n", boolean, ball);
 	
 
 	for(int opio = 0; opio <= 4; opio++){
@@ -73,23 +74,29 @@ void parseExpr(char * boolean, int ball){
 	while(boolean[r] != '\0'){
 		if(boolean[r] != ops[opio]){r++;}
 		else{ //deal with left side... get lExp... could be .reg., var, num... 
-			int l = r; int ptr = 0;int imm = 0; char regio = ' '; int isVar = 0; char lVar [30]; memset(lVar, '\0', sizeof(lVar));
-			if(!l){parseError(EXPR);}
-			l--;
+			int l = r; int ptr = 0;int imm = 0; char regioLeft = ' '; int isVar = 0; char lVar [30]; memset(lVar, '\0', sizeof(lVar));
+			if(!l){parseError(EXPR);} char regioRight = ' ';
+			 // atomic expr needs two regs (maybe), one for left, one for right
+			boolean[l--] = curr + '0';
 
-			if(boolean[l] == '.'){     //the case of a reg on left side
+			if(boolean[l] == '.'){     //the case of a reg on left side... grab reg and replace
 				if(!l){parseError(EXPR);} if(!isdigit(boolean[l-1])){parseError(EXPR);} 
-				  else{regio = boolean[l - 1]; }
-				while(boolean[l] != '.'){l--;} //progress to left until lmost .
+				  else{regioLeft = boolean[l - 1]; boolean[l] = curr + '0';/*printf("found reg\n");*/}
+				while(boolean[l] != '.'){if(l < 0){break;}boolean[l--] = curr + '0';} //progress to left until lmost .
+				while(l != r){l++;}
 			}
-			else{
-		       		while(isalnum(boolean[l]) && (l >= 0)){ 
+			else{ //if isVar/isImm on left, copy it, replace w currReg
+		       		while((l >= 0) && isalnum(boolean[l])){ 
 					if(isdigit(boolean[l])){imm++;}
 					if(isalpha(boolean[l])){isVar++;}
-					lVar[ptr++] = boolean[l--];
+					lVar[ptr++] = boolean[l];
+					boolean[l] = (curr) + '0'; //replace w reg
+					l--;
 				}
-
+				boolean[l + 1] = '.';
+				//printf("BOOL W REG TEST L: %s\n", boolean);
 				lVar[ptr] = '\0';
+
 				//reverse dat hoe 
 				//printf("got here lol\n");
 				int  e = 0; char spare = ' ';
@@ -97,27 +104,32 @@ void parseExpr(char * boolean, int ball){
 				else{ ptr--; for(; (ptr) > e;){spare = lVar[ptr]; lVar[ptr] = lVar[e]; lVar[e] = spare; ptr--; e++;}}
 
 
-				printf("LVAR: %s \n", lVar);
+				//printf("LVAR: %s \n", lVar);
 				/*look up and add to reg*/
+				//if(lookup(lVar) == NULL){parseError(UNRE);} SEMANTIC LOOKUP
+ 				printf("move %s to reg %d\n", lVar, (curr + 1)); //temp
+			}
 
 
 				//get right 
 				ptr = 0; memset(lVar, '\0', sizeof(lVar));
 				l = r + 1;
 				if(boolean[l] == '\0'){parseError(EXPR);}
-				if(boolean[l] == '.'){if(!isdigit(boolean[l+1])){parseError(EXPR);}regio = boolean[++l]; while(boolean[++l] != '.'){;}}
+				if(boolean[l] == '.'){if(!isdigit(boolean[l+1])){parseError(EXPR);}regioRight = boolean[l + 1]; while(boolean[++l] != '.'){boolean[l] = curr + '0';;}}
 				else{
-				
+
 				while(isalnum(boolean[l]) && (boolean[l] != '\0')){
                                         if(isdigit(boolean[l])){imm++;}
                                         if(isalpha(boolean[l])){isVar++;}
-                                        lVar[ptr++] = boolean[l++];
+                                        lVar[ptr++] = boolean[l];
+					boolean[l] = curr + '0';
+					l++;
                                 }
-				printf("RVAR: %s \n", lVar);
-
-				}
-				
-				
+				lVar[ptr] = '\0';
+				if(boolean[l] != '\0'){boolean[l] = '.';} else{boolean[l-1] = '.';}
+				//printf("RVAR: %s \n", lVar);
+				printf("move %s to reg: %d\n", lVar, curr + 2);
+				printf("BOOL W REG TEST : %s\n", boolean);
 				
 			r++;
 			
@@ -217,7 +229,7 @@ void tokenize(){
 			clearWhite();
 		}
 		if(!valid){parseError(VARI);}  // if at least one of the chars is alphabetic then its valid
-		if(currChar == '?'){install(varBuffer,"int"); printf("declaration of %s valid", varBuffer);}
+		if(currChar == '?'){install(varBuffer,"int"); printf("declaration of %s valid\n", varBuffer);}
 		
 		if(currChar == '='){clearWhite(); memset(expro, '\0', sizeof(expro));
 		int l = 0; int parenFlag = 0; while((currChar = getchar()) != '?'){clearWhite();if (l > 60){parseError(VARI);} expro[l++] = currChar; clearWhite();}
