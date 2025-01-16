@@ -25,6 +25,7 @@ int innaParen = 0;
 int i; int j; int boolFlag = 0; int parseKeyFlag = 0; int parseSymFlag = 0; int varLen = 0;
 char currChar = ' '; 
 char ops[4] = {'/','*','+','-'};
+char* opStr[4] = {"DIV", "MUL", "ADD", "SUB"};
 //thrown when encountering a parse error 
 void parseError(char* message){
      printf("%s on line %d\n",message, lineNum);
@@ -51,7 +52,6 @@ void parseExpr(char * boolean, int ball){
 	innaParen = 0;
 	while(boolean[r] != '\0'){
 		if(boolean[r] == '('){
-			curr++;
 			boolean[r++] = '.';
 			int open = 1; if(boolean[r] == ')'){parseError(EXPR);}
 			int p = 0; char nexp[60];
@@ -59,38 +59,37 @@ void parseExpr(char * boolean, int ball){
 				if(boolean[r] == '('){open++;} if(boolean[r] == ')'){open--;} // can deal with single reg ops here
 				if( (boolean[r] == ')') && (open == 0)){boolean[r] = '.'; break;}
 				nexp[p++] = boolean[r++];
-				boolean[r-1] = curr + '0';
+				boolean[r-1] = (curr + 1) + '0';
 			}
 			nexp[p] = '\0';
-			parseExpr(nexp, curr);
+			parseExpr(nexp, (curr + 1));
 		}
 		else{r++;}
 	}
-	printf("ATOMIC EXPR %s... in reg: %d\n", boolean, ball);
-	
-
+	printf("ATOMIC EXPR %s... in reg: %d\n", boolean, curr);
+	int detect = 0; // this will be used for final step
 	for(int opio = 0; opio <= 4; opio++){
+
 	r = 0;
 	while(boolean[r] != '\0'){
 		if(boolean[r] != ops[opio]){r++;}
 		else{ //deal with left side... get lExp... could be .reg., var, num... 
-			int l = r; int ptr = 0;int imm = 0; char regioLeft = ' '; int isVar = 0; char lVar [30]; memset(lVar, '\0', sizeof(lVar));
+			detect++;int l = r; int ptr = 0;int imm = 0; char regioLeft = ' '; int isVar = 0; char lVar [30]; memset(lVar, '\0', sizeof(lVar));
 			if(!l){parseError(EXPR);} char regioRight = ' ';
 			 // atomic expr needs two regs (maybe), one for left, one for right
-			boolean[l--] = curr + '0';
-
+			boolean[l--] = (curr + 1) + '0';
 			if(boolean[l] == '.'){     //the case of a reg on left side... grab reg and replace
 				if(!l){parseError(EXPR);} if(!isdigit(boolean[l-1])){parseError(EXPR);} 
-				  else{regioLeft = boolean[l - 1]; boolean[l] = curr + '0';/*printf("found reg\n");*/}
-				while(boolean[l] != '.'){if(l < 0){break;}boolean[l--] = curr + '0';} //progress to left until lmost .
-				while(l != r){l++;}
+				  else{regioLeft = boolean[l - 1]; boolean[l] = (curr+1) + '0';printf("found reg left \n");}
+				while(boolean[l] != '.'){if(l < 0){break;}boolean[l--] = (curr+1) + '0';} //progress to left until lmost .
+				l = r;
 			}
 			else{ //if isVar/isImm on left, copy it, replace w currReg
 		       		while((l >= 0) && isalnum(boolean[l])){ 
 					if(isdigit(boolean[l])){imm++;}
 					if(isalpha(boolean[l])){isVar++;}
 					lVar[ptr++] = boolean[l];
-					boolean[l] = (curr) + '0'; //replace w reg
+					boolean[l] = (curr + 1) + '0'; //replace w reg
 					l--;
 				}
 				boolean[l + 1] = '.';
@@ -115,20 +114,21 @@ void parseExpr(char * boolean, int ball){
 				ptr = 0; memset(lVar, '\0', sizeof(lVar));
 				l = r + 1;
 				if(boolean[l] == '\0'){parseError(EXPR);}
-				if(boolean[l] == '.'){if(!isdigit(boolean[l+1])){parseError(EXPR);}regioRight = boolean[l + 1]; while(boolean[++l] != '.'){boolean[l] = curr + '0';;}}
+				if(boolean[l] == '.'){if(!isdigit(boolean[l+1])){parseError(EXPR);}regioRight = boolean[l + 1]; printf("found reg right\n"); while(boolean[++l] != '.'){boolean[l] = (curr + 1) + '0';;}}
 				else{
 
 				while(isalnum(boolean[l]) && (boolean[l] != '\0')){
                                         if(isdigit(boolean[l])){imm++;}
                                         if(isalpha(boolean[l])){isVar++;}
                                         lVar[ptr++] = boolean[l];
-					boolean[l] = curr + '0';
+					boolean[l] = (curr + 1) + '0';
 					l++;
                                 }
-				lVar[ptr] = '\0';
-				if(boolean[l] != '\0'){boolean[l] = '.';} else{boolean[l-1] = '.';}
+				lVar[ptr] = '\0'; boolean[l- 1] = '.';
+				//if(boolean[l] != '\0'){boolean[l - 1] = '.';} else{boolean[l-1] = '.';}
 				//printf("RVAR: %s \n", lVar);
-				printf("move %s to reg: %d\n", lVar, curr + 2);
+				printf("move %s to reg: %d\n", lVar, (curr + 2));
+				curr++;
 				printf("BOOL W REG TEST : %s\n", boolean);
 				
 			r++;
