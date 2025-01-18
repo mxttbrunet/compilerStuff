@@ -35,7 +35,7 @@ void parseError(char* message){
 
 /*idea: do it recursively... 
 take (i + 40)-v 
-1. search for first pair of closed parens;
+1. search for first pair of closed parens
 add to stack??
 
 
@@ -46,18 +46,18 @@ add to stack??
 
 void parseExpr(char * boolean, int ball){
 	int curr = ball;
-	m = 0; n = 0;
-	//search for parens 
-	printf("%s\n", boolean);
+	//search for parens 			//how to detect ( l + a ) -> l + a vs. (l + 1) - (a + 1) 
+	//printf("%s\n", boolean);
 	int r = 0;
-	innaParen = 0;
 	while(boolean[r] != '\0'){
 		if(boolean[r] == '('){
 			boolean[r++] = '.';
 			int open = 1; if(boolean[r] == ')'){parseError(EXPR);}
 			int p = 0; char nexp[60];
+			//check for outermost parens to ignore
 			while(1){
-				if(boolean[r] == '('){open++;} if(boolean[r] == ')'){open--;} // can deal with single reg ops here
+				if(boolean[r] == '('){open++;} 
+				if(boolean[r] == ')'){open--;} // can deal with single reg ops here
 				if( (boolean[r] == ')') && (open == 0)){boolean[r] = '.'; break;}
 				nexp[p++] = boolean[r++];
 				boolean[r-1] = (curr + 1) + '0';
@@ -83,7 +83,7 @@ void parseExpr(char * boolean, int ball){
 			boolean[l--] = (curr + 1) + '0';
 			if(boolean[l] == '.'){     //the case of a reg on left side... grab reg and replace
 				if(!l){parseError(EXPR);} if(!isdigit(boolean[l-1])){parseError(EXPR);} 
-				  regioLeft = boolean[l - 1]; boolean[l] = (curr+1) + '0';printf("MOV, R%c, R%d\n", regioLeft, (curr + 1)); m = 1;
+				  regioLeft = boolean[l - 1]; boolean[l] = (curr+1) + '0';printf("MOV, $%c, $%d\n", regioLeft, (curr + 1)); m = 1;
 				while(boolean[l] != '.'){if(l < 0){break;}boolean[l--] = (curr+1) + '0';} //progress to left until lmost .
 				l = r;
 			}
@@ -95,6 +95,7 @@ void parseExpr(char * boolean, int ball){
 					boolean[l] = (curr + 1) + '0'; //replace w reg
 					l--;
 				}
+				if(boolean[l] == '!'){l--;}
 				boolean[l + 1] = '.';
 				//printf("BOOL W REG TEST L: %s\n", boolean);
 				lVar[ptr] = '\0';
@@ -111,7 +112,7 @@ void parseExpr(char * boolean, int ball){
 				//if(lookup(lVar) == NULL){parseError(UNRE);} SEMANTIC LOOKUP
  				//printf("REG LEFT: %c\n", regioLeft);
 				//if(m == 1){printf("move reg %c to reg %d\n", regioLeft, (curr + 1));}
-				printf("MOV, %s, R%d\n", lVar, (curr + 1)); //temp
+				printf("MOV, %s, $%d\n", lVar, (curr + 1)); //temp
 			}
 
 
@@ -119,7 +120,7 @@ void parseExpr(char * boolean, int ball){
 				ptr = 0; memset(lVar, '\0', sizeof(lVar));
 				l = r + 1;
 				if(boolean[l] == '\0'){parseError(EXPR);}
-				if(boolean[l] == '.'){if(!isdigit(boolean[l+1])){parseError(EXPR);}regioRight = boolean[l + 1]; printf("MOV, R%c, R%d\n", regioRight, (curr + 2)); n = 1; while(boolean[++l] != '.'){boolean[l] = (curr + 1) + '0';;}}
+				if(boolean[l] == '.'){if(!isdigit(boolean[l+1])){parseError(EXPR);}regioRight = boolean[l + 1]; printf("MOV, $%c, $%d\n", regioRight, (curr + 2)); n = 1; while(boolean[++l] != '.'){boolean[l] = (curr + 1) + '0';;}}
 				else{
 
 				while(isalnum(boolean[l]) && (boolean[l] != '\0')){
@@ -129,13 +130,14 @@ void parseExpr(char * boolean, int ball){
 					boolean[l] = (curr + 1) + '0';
 					l++;
                                 }
+				if(boolean[l] == '!'){l++;}
 				lVar[ptr] = '\0'; boolean[l- 1] = '.';
 				//if(boolean[l] != '\0'){boolean[l - 1] = '.';} else{boolean[l-1] = '.';}
 				//printf("RVAR: %s \n", lVar);
 				//if(n == 1){printf("move reg %c to reg %d\n", regioRight, (curr + 2));}
-				printf("MOV, %s, R%d\n", lVar, (curr + 2));
+				printf("MOV, %s, $%d\n", lVar, (curr + 2));
 				}
-				printf("%s, R%d, R%d, R%d\n", opStr[opio], curr + 1, curr + 1,curr + 2);
+				printf("%s, $%d, $%d, $%d\n", opStr[opio], curr + 1, curr + 1,curr + 2);
 				
 				curr++;
 				//printf("BOOL W REG TEST : %s\n", boolean);
@@ -149,14 +151,14 @@ void parseExpr(char * boolean, int ball){
 		//printf("BOOL AFTER:%s\n", boolean);
 		int bullshit = 0;
 		int k = 0; while(boolean[k++] != '\0'){if( (boolean[k] == '+') || (boolean[k] == '-') ||  (boolean[k] == '/') || (boolean[k] == '*')) {bullshit++;}}
-		if(bullshit == 0){/*if(m == 1){printf("move %c to %d\n", boolean[1], ball - 1);*/ printf("MOV, R%c, R%d\n", boolean[1], ball);}
+		if(bullshit == 0){printf("MOV, $%c, $%d\n", boolean[1], ball);}
 		m = 0;
 		}
 
 		}
 	
 	}
-        
+	if(ball != currReg - 1){printf("MOV, $%d, $%d\n", ball, currReg - 1);}
 
 
 }
@@ -191,6 +193,8 @@ for(q = 0; nextExpr[q] != '\0'; q++){
 	closed = pOpen;
 	for(q = 0; pOpen > 0;q++){if(nextExpr[q] == '('){nextExpr[q] = '!'; pOpen--;}} 
 	parseExpr(nextExpr, currReg++);
+
+
 	memset(nextExpr, '\0', sizeof(nextExpr));
 	for(q = 0; boolean[p] != '\0'; p++){
 		nextExpr[q++] = boolean[p];
