@@ -20,12 +20,13 @@ char tokenBuff[65];
 char lastToken[65];
 char booleanString[100];
 char expro[65];
-int currReg = 0;  int m= 0;int n = 0;
+int currReg = 0; 
+int final = 0;
 int innaParen = 0;
 int i; int j; int boolFlag = 0; int parseKeyFlag = 0; int parseSymFlag = 0; int varLen = 0;
 char currChar = ' '; 
 char ops[4] = {'/','*','+','-'};
-char* opStr[4] = {"DIV", "MUL", "ADD", "SUB"};
+char* opStr[4] = {"div", "mul", "add", "sub"};
 //thrown when encountering a parse error 
 void parseError(char* message){
      printf("%s on line %d\n",message, lineNum);
@@ -44,8 +45,8 @@ add to stack??
 
 */
 
-void parseExpr(char * boolean, int ball){
-	int curr = ball;
+int parseExpr(char * boolean, int ball){
+	int curr= ball;
 	//search for parens 			//how to detect ( l + a ) -> l + a vs. (l + 1) - (a + 1) 
 	//printf("%s\n", boolean);
 	int r = 0;
@@ -69,6 +70,8 @@ void parseExpr(char * boolean, int ball){
 		else{r++;}
 	}
 	//printf("ATOMIC EXPR %s...\n", boolean);
+
+
 	int detect = 0; // this will be used for final step
 	for(int opio = 0; opio <= 4; opio++){
 	//int m = 0;
@@ -83,7 +86,7 @@ void parseExpr(char * boolean, int ball){
 			boolean[l--] = (curr + 1) + '0';
 			if(boolean[l] == '.'){     //the case of a reg on left side... grab reg and replace
 				if(!l){parseError(EXPR);} if(!isdigit(boolean[l-1])){parseError(EXPR);} 
-				  regioLeft = boolean[l - 1]; boolean[l] = (curr+1) + '0';printf("MOV, $%c, $%d\n", regioLeft, (curr + 1)); m = 1;
+				  regioLeft = boolean[l - 1]; boolean[l] = (curr+1) + '0';printf("move, $%d, $%c\n", (curr + 1), regioLeft);
 				while(boolean[l] != '.'){if(l < 0){break;}boolean[l--] = (curr+1) + '0';} //progress to left until lmost .
 				l = r;
 			}
@@ -112,7 +115,7 @@ void parseExpr(char * boolean, int ball){
 				//if(lookup(lVar) == NULL){parseError(UNRE);} SEMANTIC LOOKUP
  				//printf("REG LEFT: %c\n", regioLeft);
 				//if(m == 1){printf("move reg %c to reg %d\n", regioLeft, (curr + 1));}
-				printf("MOV, %s, $%d\n", lVar, (curr + 1)); //temp
+				printf("move, $%d, %s\n", (curr+1), lVar); //temp
 			}
 
 
@@ -120,7 +123,7 @@ void parseExpr(char * boolean, int ball){
 				ptr = 0; memset(lVar, '\0', sizeof(lVar));
 				l = r + 1;
 				if(boolean[l] == '\0'){parseError(EXPR);}
-				if(boolean[l] == '.'){if(!isdigit(boolean[l+1])){parseError(EXPR);}regioRight = boolean[l + 1]; printf("MOV, $%c, $%d\n", regioRight, (curr + 2)); n = 1; while(boolean[++l] != '.'){boolean[l] = (curr + 1) + '0';;}}
+				if(boolean[l] == '.'){if(!isdigit(boolean[l+1])){parseError(EXPR);}regioRight = boolean[l + 1]; printf("move, $%d, $%c\n", (curr+2), regioRight);while(boolean[++l] != '.'){boolean[l] = (curr + 1) + '0';;}}
 				else{
 
 				while(isalnum(boolean[l]) && (boolean[l] != '\0')){
@@ -132,35 +135,36 @@ void parseExpr(char * boolean, int ball){
                                 }
 				if(boolean[l] == '!'){l++;}
 				lVar[ptr] = '\0'; boolean[l- 1] = '.';
-				//if(boolean[l] != '\0'){boolean[l - 1] = '.';} else{boolean[l-1] = '.';}
-				//printf("RVAR: %s \n", lVar);
-				//if(n == 1){printf("move reg %c to reg %d\n", regioRight, (curr + 2));}
-				printf("MOV, %s, $%d\n", lVar, (curr + 2));
+				printf("move, $%d, %s\n", (curr+2), lVar); // this will be changed to lw possibly?
 				}
 				printf("%s, $%d, $%d, $%d\n", opStr[opio], curr + 1, curr + 1,curr + 2);
-				
-				curr++;
+
+				//curr++;
 				//printf("BOOL W REG TEST : %s\n", boolean);
 
-			r++;			
-        
-
-		//end of else{parseOperations}
+				r++;
 
 
-		//printf("BOOL AFTER:%s\n", boolean);
-		int bullshit = 0;
-		int k = 0; while(boolean[k++] != '\0'){if( (boolean[k] == '+') || (boolean[k] == '-') ||  (boolean[k] == '/') || (boolean[k] == '*')) {bullshit++;}}
-		if(bullshit == 0){printf("MOV, $%c, $%d\n", boolean[1], ball);}
-		m = 0;
+			//printf("BOOL AFTER:%s\n", boolean);
+				int bullshit = 0;
+				int k = 0; while(boolean[k++] != '\0'){if( (boolean[k] == '+') || (boolean[k] == '-') ||  (boolean[k] == '/') || (boolean[k] == '*')) {bullshit++;}}
+				if(bullshit == 0){printf("move, $%d, $%c\n", ball, boolean[1]);}
+				//printf("%d BALLS\n", ball);
+				final = ball;
+
 		}
+		//end of else{parseoperations
+
 
 		}
 	
 	}
-	if(ball != currReg - 1){printf("MOV, $%d, $%d\n", ball, currReg - 1);}
+	
+	//if(currReg - curr == 0){printf("BRUH move, $%d, $%d\n", currReg, curr + 1);}
+	//printf("move, $%d, $%d\n", currReg - 1, ball);
+       	//printf("%d BALLS\n", ball);
 
-
+	return 0;
 }
 
 
@@ -253,8 +257,11 @@ void tokenize(){
 		if(currChar == '?'){install(varBuffer,"int"); printf("declaration of %s valid\n", varBuffer);}
 		
 		if(currChar == '='){clearWhite(); memset(expro, '\0', sizeof(expro));
-		int l = 0; int parenFlag = 0; while((currChar = getchar()) != '?'){clearWhite();if (l > 60){parseError(VARI);} expro[l++] = currChar; clearWhite();}
-		expro[l] = '\0'; parseExpr(expro, currReg++);
+		int l = 0; int div = 0; while((currChar = getchar()) != '?'){clearWhite();if (l > 60){parseError(VARI);} expro[l++] = currChar; clearWhite();}
+		expro[l] = '\0'; 
+		parseExpr(expro, currReg++);
+		if(final != currReg - 1){ printf("move, $%d, $%d\n", (currReg-1), (final));}
+
 		}
 	
 
