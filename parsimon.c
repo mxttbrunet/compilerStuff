@@ -1,10 +1,12 @@
 //brunet, matt... compiler for cqq...from scratch
+//need to optimize memory usage 
 //tokens: "WHILE", "INT", "CHAR", "IF", "ELSE", "VAR", "PLUS"
         //"MINUS", "DIV", "MULT", "EQ", "QM","LT", "GT", "LEQ"
         // "GEQ" 
         //NO UNDERSCORES!!!!!!!!!!!!
 //parser will parse apart keywords/variable names from symbols
 
+// simply run this file and type in the C?? code, and MIPS-32 ASM will be output
 
 #include<ctype.h>
 #include"symbolTable.h"
